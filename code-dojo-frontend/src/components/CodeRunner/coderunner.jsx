@@ -51,7 +51,11 @@ export function CodeRunner({
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="rounded border border-white/30 bg-black/30 px-2 py-1 text-xs text-white"
+            className="rounded-md border border-emerald-400/40 
+              bg-gradient-to-r from-gray-900 via-black to-gray-800 
+              px-3 py-1.5 text-sm text-emerald-300 
+              focus:outline-none focus:ring-2 focus:ring-emerald-500 
+              hover:bg-gray-800 transition-all duration-200"
           >
             <option value="javascript">JavaScript</option>
             <option value="python">Python</option>
