@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { CodeRunner } from "../components/CodeRunner/coderunner";
-import { Timer } from "../components/Timer/timer";
+import { Timer } from "../components/Timer/ArenaTimer";
 import { useSocket } from "../context/socketContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { TestCases } from "../components/TestCases/testCases";
 
 export default function Arena() {
   const { user } = useAuth();
@@ -27,8 +28,6 @@ export default function Arena() {
   const [yourProgress, setYourProgress] = useState(0);
   const [opponentProgress, setOpponentProgress] = useState(0);
 
-  const [result, setResult] = useState(null);
-
   const battleId = battle?._id;
 
   // ================= RECONNECT =================
@@ -47,12 +46,25 @@ export default function Arena() {
       setStatus("active");
     });
 
+    socket.on("battle:ended", (res) => {
+      setIsSubmitting(false);
+      setStatus("finished");
+
+      navigate("/battle-result", {
+        state: { result: res },
+        replace: true,
+      });
+      localStorage.removeItem("activeBattleId");
+      localStorage.removeItem("battleStatus");
+    });
+
     return () => {
       socket.off("battle:resume");
+      socket.off("battle:ended");
     };
-  }, [socket, battleId]);
+  }, [socket, battleId, navigate, user]);
 
-  // ================= STORE BATTLE =================
+  // ================= STORE ACTIVE BATTLE =================
   useEffect(() => {
     if (battleId) {
       localStorage.setItem("activeBattleId", battleId);
@@ -61,34 +73,30 @@ export default function Arena() {
 
   // ================= SOCKET EVENTS =================
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !battle) return;
 
-    const total = battle.question.testCases.length;
+    socket.on("battle:update", (data) => {
+      const { userId, passedCount, results, error } = data;
 
-    socket.on("battle:update", ({ userId, passedCount }) => {
-      if (userId === user._id) {
-        setYourProgress((passedCount / total) * 100);
-          } else {
-        setOpponentProgress((passedCount / total) * 100);
+      const total = battle.question?.testCases?.length || 1;
+      const percent = (passedCount / total) * 100;
+
+      if (userId === user.id) {
+        setYourProgress(percent);
+        setRunResult({ results, error });
+      } else {
+        setOpponentProgress(percent);
       }
-      setIsSubmitting(false);
-    });
 
-    socket.on("battle:ended", (res) => {
-      setResult(res);
-      setStatus("finished");
       setIsSubmitting(false);
-      localStorage.removeItem("activeBattleId");
     });
 
     return () => {
       socket.off("battle:update");
-      socket.off("battle:ended");
     };
-  }, [socket, user]);
+  }, [socket, battle, user]);
 
-  console.log("Battle object:", battle); // print battle for debugging
-  // ================= RUN =================
+  // ================= RUN CODE =================
   const runCode = async () => {
     if (!battle) return;
 
@@ -99,23 +107,20 @@ export default function Arena() {
         sourceCode: code,
       });
 
-      console.log("Run response:", res.data);
-
       setRunResult(res.data);
 
-      // IMPORTANT
       if (res.data.verdict === "ACCEPTED") {
         setCanSubmit(true);
       } else {
         setCanSubmit(false);
       }
-
     } catch (err) {
-      console.error(err.response?.data || err.message);
+      setRunResult({
+        error: err.response?.data?.error || err.message,
+      });
       setCanSubmit(false);
     }
   };
-
 
   // ================= SUBMIT =================
   const submitCode = () => {
@@ -132,8 +137,7 @@ export default function Arena() {
     setCanSubmit(false);
   };
 
-  // ================= SAFETY =================
-  if (!battle && status !== "finished") {
+  if (!battle) {
     return (
       <div className="h-screen flex items-center justify-center bg-neutral-950 text-amber-400">
         Restoring Battle...
@@ -142,12 +146,12 @@ export default function Arena() {
   }
 
   return (
-    <div className="h-screen bg-neutral-950 text-neutral-100 grid grid-cols-[80px_1fr_420px] grid-rows-[80px_1fr_260px]">
 
+    <div className="h-screen bg-neutral-950 text-neutral-100 grid grid-cols-[1fr_420px] grid-rows-[80px_1fr_300px]">
       {/* HEADER */}
-      <header className="col-span-3 flex items-center justify-between px-10 border-b border-neutral-800 bg-neutral-900">
+      <header className="col-span-2 flex items-center justify-between px-10 border-b border-neutral-800 bg-neutral-900">
 
-        {/* Your Progress */}
+        {/* YOUR PROGRESS */}
         <div className="flex items-center gap-4">
           <span className="text-sm text-neutral-400">You</span>
           <div className="w-64 h-2 bg-neutral-800 rounded">
@@ -158,14 +162,19 @@ export default function Arena() {
           </div>
         </div>
 
-        {/* Timer */}
+        {/* TIMER */}
         <div className="text-2xl tracking-widest font-semibold text-amber-400">
-          {status === "active" && battle?.timeLimit && (
-            <Timer initialTime={battle.timeLimit} />
+          {status === "active" && battle?.startedAt && battle?.timeLimit && (
+            <Timer
+              endTime={
+                new Date(battle.startedAt).getTime() +
+                battle.timeLimit * 1000
+              }
+            />
           )}
         </div>
 
-        {/* Opponent Progress */}
+        {/* OPPONENT PROGRESS */}
         <div className="flex items-center gap-4">
           <div className="w-64 h-2 bg-neutral-800 rounded">
             <div
@@ -175,92 +184,42 @@ export default function Arena() {
           </div>
           <span className="text-sm text-neutral-400">Opponent</span>
         </div>
-
       </header>
-
-      {/* SIDEBAR */}
-      <aside className="row-span-2 bg-neutral-900 border-r border-neutral-800 flex flex-col items-center pt-6 space-y-6">
-
-        <div className="w-10 h-10 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center font-bold">
-          {user?.warriorName?.charAt(0)}
-        </div>
-
-        <div className="w-10 h-10 rounded-full bg-neutral-700 border-2 border-neutral-500 flex items-center justify-center font-bold">
-          {battle?.players?.find(
-              p => p.userId?.toString() !== user?._id?.toString()
-            )?.name?.charAt(0) || "O"}
-        </div>
-
-      </aside>
 
       {/* CODE RUNNER */}
       <main className="row-span-2 p-6 overflow-hidden">
         <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900 p-4">
 
-          {status === "active" && (
-            <CodeRunner
-              code={code}
-              setCode={setCode}
-              onRun={runCode}
-              onSubmit={submitCode}
-              canSubmit={canSubmit}
-              language={language}
-              setLanguage={setLanguage}
-              isSubmitting={isSubmitting}
-            />
-          )}
-
-          {status === "finished" && (
-            <div className="text-center">
-              <h2 className="text-2xl text-amber-400 mb-4">
-                Battle Finished
-              </h2>
-              <p>
-                {result?.winner === user?._id
-                  ? "Victory!"
-                  : "Defeat"}
-              </p>
-              <button
-                onClick={() => navigate("/arena")}
-                className="mt-4 px-4 py-2 bg-red-700 rounded"
-              >
-                Return to Dojo
-              </button>
-            </div>
-          )}
+          <CodeRunner
+            code={code}
+            setCode={setCode}
+            onRun={runCode}
+            onSubmit={submitCode}
+            canSubmit={canSubmit}
+            language={language}
+            setLanguage={setLanguage}
+            isSubmitting={isSubmitting}
+          />
 
         </div>
       </main>
 
       {/* QUESTION */}
       <section className="border-l border-b border-neutral-800 p-6 bg-neutral-900 overflow-y-auto">
-        {battle && (
-          <>
-            <h2 className="text-xl font-semibold text-amber-400 mb-4">
-              {battle.question.title}
-            </h2>
-            <p className="text-neutral-300 leading-relaxed">
-              {battle.question.description}
-            </p>
-          </>
-        )}
+        <h2 className="text-xl font-semibold text-amber-400 mb-4">
+          {battle.question.title}
+        </h2>
+        <p className="text-neutral-300 leading-relaxed">
+          {battle.question.description}
+        </p>
       </section>
 
       {/* TEST CASES */}
       <section className="border-l border-neutral-800 p-6 bg-neutral-950 overflow-y-auto">
-        {battle?.question?.testCases?.map((tc, i) => (
-          <div
-            key={i}
-            className="mb-4 p-3 rounded bg-neutral-900 border border-neutral-800 text-sm"
-          >
-            <div>
-              <span className="text-neutral-400">Input:</span> {tc.input}
-            </div>
-            <div>
-              <span className="text-neutral-400">Expected:</span> {tc.expectedOutput}
-            </div>
-          </div>
-        ))}
+        <TestCases
+          testCases={battle.question.testCases}
+          runResult={runResult}
+        />
       </section>
 
     </div>

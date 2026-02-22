@@ -6,4 +6,21 @@ services:
       - "5000:5000"
     env_file:
       - .env
+    depends_on:
+      - piston
     restart: unless-stopped
+
+  piston:
+    image: ghcr.io/engineer-man/piston
+    container_name: piston
+    ports:
+      - "2000:2000"
+    volumes:
+      - piston-data:/piston
+    privileged: true
+    security_opt:
+      - seccomp=unconfined
+    restart: unless-stopped
+
+volumes:
+  piston-data:

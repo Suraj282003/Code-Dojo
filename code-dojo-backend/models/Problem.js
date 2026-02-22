@@ -14,6 +14,19 @@ const problemSchema = new mongoose.Schema({
     enum: ['Easy', 'Medium', 'Hard'],
     default: 'Easy',
   },
+
+  minRating: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+
+  maxRating: {
+    type: Number,
+    required: true,
+    default: 3000
+  },
+
   timeLimitMs: {
     type: Number,
     default: 2000, // 2 seconds

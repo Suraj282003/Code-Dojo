@@ -1,25 +1,36 @@
 const mongoose = require("mongoose");
 
 const battleSchema = new mongoose.Schema({
-    players: [
-    {
-        userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        },
-        passedCount: { type: Number, default: 0 },
-        lastSubmissionAt: Date,
-    },
-    ],
 
-  problemId :{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Problem",
+  type: {
+    type: String,
+    enum: ["ranked", "casual"],
+    default: "ranked",
   },
 
-  level: {
-    type: Number,
-    required: true,
+  players: [
+    {
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+
+      name: String,
+
+      ratingSnapshot: Number, // rating at match start
+
+      passedCount: {
+        type: Number,
+        default: 0,
+      },
+
+      lastSubmissionAt: Date,
+    },
+  ],
+
+  problemId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Problem",
   },
 
   question: {
@@ -28,20 +39,10 @@ const battleSchema = new mongoose.Schema({
     testCases: Array,
   },
 
-  entryFee: {
-    type: Number,
-    default: 5,
-  },
-
-  totalPot: {
-    type: Number,
-    required: true,
-  },
-
   status: {
     type: String,
-    enum: ["waiting", "active", "finished"],
-    default: "waiting",
+    enum: ["active", "finished"],
+    default: "active",
   },
 
   winner: {
@@ -49,8 +50,28 @@ const battleSchema = new mongoose.Schema({
     ref: "User",
   },
 
-  startedAt: Date,
-  timeLimit: Number, // in seconds
-});
+  resultType: {
+    type: String,
+    enum: ["NORMAL", "TIMEOUT", "DISCONNECT", "DRAW"],
+  },
+
+  ratingChange: {
+    winnerDelta: Number,
+    loserDelta: Number,
+  },
+
+  startedAt: {
+    type: Date,
+    required: true,
+  },
+
+  finishedAt: Date,
+
+  timeLimit: {
+    type: Number,
+    required: true,
+  },
+
+}, { timestamps: true });
 
 module.exports = mongoose.model("Battle", battleSchema);

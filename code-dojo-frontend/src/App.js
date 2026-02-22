@@ -7,6 +7,7 @@ import Goodbye from "./components/ByePage/Goodbye";
 import Arena from "./Pages/Arena"
 import ArenaHome from "./Pages/ArenaHome"
 import WaitingRoom from "./Pages/WaitingRoom"
+import BattelResult from "./Pages/BattleResult"
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
         <Route path="/arena" element={<ArenaHome />} />
         <Route path="/arena/fight" element={<Arena />} />
         <Route path="/arena/waiting" element={<WaitingRoom />} />
-
+        <Route path="/battle-result" element={<BattelResult />} />
 
       </Routes>
     </BrowserRouter>

@@ -35,7 +35,7 @@ exports.getProblemById = async (req, res) => {
 // Create problem (admin only)
 exports.createProblem = async (req, res) => {
   try {
-    const { title, description, difficulty, timeLimitMs, memoryLimitMb, testCases } = req.body;
+    const { title, description, difficulty, timeLimitMs, memoryLimitMb, testCases, minRating, maxRating } = req.body;
 
     const problem = new Problem({
       title,
@@ -43,6 +43,9 @@ exports.createProblem = async (req, res) => {
       difficulty,
       timeLimitMs,
       memoryLimitMb,
+      minRating,
+      maxRating,
+
     });
 
     await problem.save();

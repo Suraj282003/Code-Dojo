@@ -12,9 +12,8 @@ const { Server } = require("socket.io");
 const socketAuth = require("./socket/socketAuth");
 const battleSocket = require("./socket/battleSocket");
 const Battle = require("./models/Battle");
-const { scheduleBattleTimeout } = require("./services/battleTimeoutManager");
+const { recoverActiveBattles } = require("./services/battleTimeoutManager");
 const { finishBattleByTimeout } = require("./services/battleEngine");
-const battleRoutes = require("./routes/battleRoutes");
 
 
 const app = express();
@@ -35,15 +34,6 @@ app.use(express.urlencoded({ extended: true }));
 // Connect Database
 connectDB();
 
-async function recoverActiveBattles(io) {
-  const activeBattles = await Battle.find({ status: "active" });
-
-  for (const battle of activeBattles) {
-    scheduleBattleTimeout(io, battle, finishBattleByTimeout);
-  }
-
-  console.log(`Recovered ${activeBattles.length} active battles`);
-}
 
 // Routes
 app.use('/api/problems', problemRoutes);
@@ -53,7 +43,6 @@ app.use("/api/categories", require("./routes/category"));
 app.use("/api/challenge", require("./routes/challenge"));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/battle", battleRoutes);
 
 
 // Health check
@@ -91,8 +80,7 @@ io.on("connection", (socket) => {
   console.log("⚡ New socket connected:", socket.id);
 });
 
-recoverActiveBattles(io);
-
+recoverActiveBattles(io, finishBattleByTimeout);
 
 const PORT = process.env.PORT || 5000;
 

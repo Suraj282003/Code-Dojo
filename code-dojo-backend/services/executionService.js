@@ -1,14 +1,14 @@
 const axios = require("axios")
 
-const PISTON_URL = "https://emkc.org/api/v2/piston/execute"
+const PISTON_URL = "http://piston:2000/api/v2/execute"
 
 function mapLanguage(language) {
   switch (language) {
     case "javascript":
-      return { language: "javascript", version: "18.15.0" }
+      return { language: "node", version: "18.15.0" }
 
     case "java":
-      return { language: "java", version: "17.0.0" }
+      return { language: "java", version: "15.0.2" }
 
     case "python":
       return { language: "python3", version: "3.10.0" }
@@ -27,9 +27,29 @@ async function executeCode({ sourceCode, language, input }) {
   const payload = {
     language: langConfig.language,
     version: langConfig.version,
-    files: [{ name: "Main", content: sourceCode }],
-    stdin: input + "\n",
+    files: [
+      {
+        name:
+          language === "java"
+            ? "Main.java"
+            : language === "cpp"
+            ? "main.cpp"
+            : language === "python"
+            ? "main.py"
+            : "main.js",
+        content: sourceCode,
+      },
+    ],
+    stdin: input,
   }
+
+  // 🚨 IMPORTANT FIX FOR JAVA
+  if (language === "java") {
+    payload.run = {
+      command: "java Main",
+    }
+  }
+
 
   try {
     const response = await axios.post(PISTON_URL, payload)

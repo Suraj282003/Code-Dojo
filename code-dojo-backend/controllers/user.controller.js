@@ -8,8 +8,13 @@ exports.getProfile = async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        level: req.user.level,
-        battleCoins: req.user.battleCoins,
+        rating: req.user.rating || 1200,
+        rank: req.user.rank || "Bronze",
+        wins: req.user.wins || 0,
+        losses: req.user.losses || 0,
+        draws: req.user.draws || 0,
+        totalMatches: req.user.totalMatches || 0,
+
         signUpAt: req.user.signUpAt,
       },
     });
