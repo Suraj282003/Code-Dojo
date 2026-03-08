@@ -1,5 +1,8 @@
 const Problem = require('../models/Problem');
 const TestCase = require('../models/TestCase');
+const { generateStructuredProblem } = require("../services/aiProblemEngine");
+const Category = require("../models/Category");
+
 
 // Get all problems
 exports.getAllProblems = async (req, res) => {
@@ -68,3 +71,4 @@ exports.createProblem = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+

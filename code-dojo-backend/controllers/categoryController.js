@@ -16,7 +16,11 @@ exports.getCategoryById = async (req, res) => {
     const { categoryId } = req.params
 
     const category = await Category.findById(categoryId)
-      .populate("problems.problemId", "title difficulty")
+      .populate({
+          path: "problems.problemId",
+          match: { isApproved: true },
+          select: "title difficulty"
+        })
 
     if (!category) {
       return res.status(404).json({ error: "Category not found" })

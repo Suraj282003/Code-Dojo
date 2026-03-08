@@ -39,10 +39,29 @@ const problemSchema = new mongoose.Schema({
     type: [String],
     default: ['c++', 'java', 'javascript', 'python3'],
   },
+  usageCount: {
+  type: Number,
+  default: 0
+  },
+  lastUsedAt: {
+    type: Date
+  },
+  isApproved: {
+    type: Boolean,
+    default: false
+  },
+  tags: {
+    type: [String],
+    default: []
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+
+problemSchema.index({ minRating: 1, maxRating: 1 });
+problemSchema.index({ isApproved: 1 });
 
 module.exports = mongoose.model('Problem', problemSchema);

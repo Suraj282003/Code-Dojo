@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import api from "../api/axios"
+import Navbar from "../components/Navigation/NavBar";
 
-import { LogoutButton } from "../components/Button/logout-button"
 import { CodeRunner } from "../components/CodeRunner/coderunner"
 import { Timer } from "../components/Timer/timer"
 import { TestCases } from "../components/TestCases/testCases"
@@ -184,19 +184,21 @@ export default function Survival() {
           </span>
         ))}
       </div>
+{/* 🥷 GLOBAL NAVBAR (TRANSPARENT) */}
+    <div className="relative z-20">
+      <Navbar />
+    </div>
 
-      {/* NAVBAR */}
-      <nav className="relative z-20 flex items-center border-b border-white/20 bg-emerald-900/70 px-6 py-3 backdrop-blur">
-        <div className="absolute left-6 font-semibold text-green-100"><span className="font-bold tracking-wide text-white">Code Dojo</span></div>
-        <div className="mx-auto">
-          {timeRemaining > 0 && !timeUp && (
-            <Timer timeRemaining={timeRemaining} onTimeUp={handleTimeUp} enabled={isAuthenticated}/>
-          )}
-        </div>
-        <div className="absolute right-6">
-          <LogoutButton />
-        </div>
-      </nav>
+    {/* TIMER SECTION (same position feel) */}
+    <div className="relative z-20 flex items-center justify-center border-b border-white/20 px-6 py-3">
+      {timeRemaining > 0 && !timeUp && (
+        <Timer
+          timeRemaining={timeRemaining}
+          onTimeUp={handleTimeUp}
+          enabled={isAuthenticated}
+        />
+      )}
+    </div>
 
       {/* MAIN LAYOUT */}
       <div className="relative z-10 flex flex-1 overflow-hidden">

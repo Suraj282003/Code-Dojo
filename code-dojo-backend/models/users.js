@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema({
 
   rating: {
     type: Number,
-    default: 1000,
+    default: 1200,
     min: 0,
   },
 

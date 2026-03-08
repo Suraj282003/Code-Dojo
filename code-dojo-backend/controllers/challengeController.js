@@ -9,9 +9,13 @@ exports.startRun = async (req, res) => {
   const { userId, categoryId } = req.body
 
   const category = await Category.findById(categoryId)
-  if (!category) {
-    return res.status(404).json({ error: "Category not found" })
+  if (!category.problems || category.problems.length < 7) {
+    return res.status(400).json({
+      error: "Category does not have enough problems"
+    });
   }
+
+  category.problems = category.problems.filter(p => p.problemId);
 
   // Always start fresh
   const run = new ChallengeRun({
@@ -66,7 +70,12 @@ exports.getCurrentProblem = async (req, res) => {
 exports.submitInRun = async (req, res) => {
   try {
     const { runId } = req.params
-    const { problemId, language, sourceCode } = req.body
+    const { language, sourceCode } = req.body
+    const category = await Category.findById(run.categoryId);
+    category.problems.sort((a, b) => a.order - b.order);
+
+    const problemId = category.problems[run.currentIndex].problemId;
+
     const userId = req.body.userId || "demo-user"
 
     const testCases = await TestCase.find({
@@ -93,9 +102,6 @@ exports.submitInRun = async (req, res) => {
       return res.json({ status: "FAILED", reason: "TIME_UP" })
     }
 
-    // 3️⃣ Get current problem
-    const category = await Category.findById(run.categoryId)
-    category.problems.sort((a, b) => a.order - b.order)
 
     // const problemId = category.problems[run.currentIndex].problemId
 
@@ -125,6 +131,11 @@ if (result.verdict !== "ACCEPTED") {
       run.status = "COMPLETED"
       run.endedAt = new Date()
       await run.save()
+
+      const problem = await Problem.findById(problemId);
+        problem.usageCount += 1;
+        problem.lastUsedAt = new Date();
+        await problem.save();
 
       return res.json({
         status: "COMPLETED",

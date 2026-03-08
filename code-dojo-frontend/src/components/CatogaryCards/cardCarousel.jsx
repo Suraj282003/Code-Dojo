@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import api from "../../api/axios"
 import { useNavigate } from "react-router-dom"
+import Navbar from "../Navigation/NavBar"
 
 // 🌿 Bamboo / Nature themed stacked carousel
 const CardCarousel = () => {
@@ -31,6 +32,13 @@ const CardCarousel = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
+      
+          
+    {/* 🥷 Navbar */}
+    <div className="absolute top-0 left-0 w-full z-50">
+      <Navbar />
+    </div>
+
       {/* 🌿 Bamboo background */}
       <div
         className="absolute inset-0 bg-cover bg-center"

@@ -30,6 +30,7 @@ exports.signup = async (req, res) => {
 
     // 3️⃣ Create user
     const user = await User.create({ name, email, password });
+    console.log("New user created:", user);
 
     // 4️⃣ Generate tokens (MATCHES YOUR MODEL)
     const accessToken = user.generateAccessToken();

@@ -6,6 +6,7 @@ import { useSocket } from "../context/socketContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { TestCases } from "../components/TestCases/testCases";
+import { QuestionBlock } from "../components/Questions/question";
 
 export default function Arena() {
   const { user } = useAuth();
@@ -146,82 +147,76 @@ export default function Arena() {
   }
 
   return (
+  <div className="h-screen bg-neutral-950 text-neutral-100 grid grid-cols-[1.6fr_1fr] grid-rows-[80px_1fr_260px]">
 
-    <div className="h-screen bg-neutral-950 text-neutral-100 grid grid-cols-[1fr_420px] grid-rows-[80px_1fr_300px]">
-      {/* HEADER */}
-      <header className="col-span-2 flex items-center justify-between px-10 border-b border-neutral-800 bg-neutral-900">
+    {/* HEADER */}
+    <header className="col-span-2 flex items-center justify-between px-10 border-b border-neutral-800 bg-neutral-900">
 
-        {/* YOUR PROGRESS */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-neutral-400">You</span>
-          <div className="w-64 h-2 bg-neutral-800 rounded">
-            <div
-              className="h-full bg-red-700 rounded transition-all duration-300"
-              style={{ width: `${yourProgress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* TIMER */}
-        <div className="text-2xl tracking-widest font-semibold text-amber-400">
-          {status === "active" && battle?.startedAt && battle?.timeLimit && (
-            <Timer
-              endTime={
-                new Date(battle.startedAt).getTime() +
-                battle.timeLimit * 1000
-              }
-            />
-          )}
-        </div>
-
-        {/* OPPONENT PROGRESS */}
-        <div className="flex items-center gap-4">
-          <div className="w-64 h-2 bg-neutral-800 rounded">
-            <div
-              className="h-full bg-neutral-600 rounded transition-all duration-300"
-              style={{ width: `${opponentProgress}%` }}
-            />
-          </div>
-          <span className="text-sm text-neutral-400">Opponent</span>
-        </div>
-      </header>
-
-      {/* CODE RUNNER */}
-      <main className="row-span-2 p-6 overflow-hidden">
-        <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900 p-4">
-
-          <CodeRunner
-            code={code}
-            setCode={setCode}
-            onRun={runCode}
-            onSubmit={submitCode}
-            canSubmit={canSubmit}
-            language={language}
-            setLanguage={setLanguage}
-            isSubmitting={isSubmitting}
+      {/* YOUR PROGRESS */}
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-neutral-400">You</span>
+        <div className="w-64 h-2 bg-neutral-800 rounded">
+          <div
+            className="h-full bg-red-700 rounded transition-all duration-300"
+            style={{ width: `${yourProgress}%` }}
           />
-
         </div>
-      </main>
+      </div>
 
-      {/* QUESTION */}
-      <section className="border-l border-b border-neutral-800 p-6 bg-neutral-900 overflow-y-auto">
-        <h2 className="text-xl font-semibold text-amber-400 mb-4">
-          {battle.question.title}
-        </h2>
-        <p className="text-neutral-300 leading-relaxed">
-          {battle.question.description}
-        </p>
-      </section>
+      {/* TIMER */}
+      <div className="text-2xl tracking-widest font-semibold text-amber-400">
+        {status === "active" && battle?.startedAt && battle?.timeLimit && (
+          <Timer
+            endTime={
+              new Date(battle.startedAt).getTime() +
+              battle.timeLimit * 1000
+            }
+          />
+        )}
+      </div>
 
-      {/* TEST CASES */}
-      <section className="border-l border-neutral-800 p-6 bg-neutral-950 overflow-y-auto">
-        <TestCases
-          testCases={battle.question.testCases}
-          runResult={runResult}
+      {/* OPPONENT PROGRESS */}
+      <div className="flex items-center gap-4">
+        <div className="w-64 h-2 bg-neutral-800 rounded">
+          <div
+            className="h-full bg-neutral-600 rounded transition-all duration-300"
+            style={{ width: `${opponentProgress}%` }}
+          />
+        </div>
+        <span className="text-sm text-neutral-400">Opponent</span>
+      </div>
+
+    </header>
+
+    {/* CODE EDITOR */}
+    <main className="row-span-2 p-4">
+      <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900 overflow-hidden">
+        <CodeRunner
+          code={code}
+          setCode={setCode}
+          onRun={runCode}
+          onSubmit={submitCode}
+          canSubmit={canSubmit}
+          language={language}
+          setLanguage={setLanguage}
+          isSubmitting={isSubmitting}
         />
-      </section>
+      </div>
+    </main>
 
-    </div>
-  );
+    {/* QUESTION PANEL */}
+    <section className="border-l border-b border-neutral-800 bg-neutral-900 overflow-hidden">
+      <QuestionBlock problem={battle.question} />
+    </section>
+
+    {/* TEST CASES */}
+    <section className="border-l border-neutral-800 bg-neutral-950 overflow-y-auto">
+      <TestCases
+        testCases={battle.question.testCases}
+        runResult={runResult}
+      />
+    </section>
+
+  </div>
+);
 }

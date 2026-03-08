@@ -3,6 +3,7 @@ const User = require("../models/users");
 const { judgeSubmission } = require("./judgeService");
 const { clearBattleTimeout } = require("./battleTimeoutManager");
 const TestCase = require("../models/TestCase");
+const Problem = require("../models/Problem");
 
 
 // ======================================
@@ -132,8 +133,14 @@ loser.rating = loserNewRating;
   winner.wins = (winner.wins || 0) + 1;
   loser.losses = (loser.losses || 0) + 1;
 
+  winner.totalMatches = (winner.totalMatches || 0) + 1;
+  loser.totalMatches = (loser.totalMatches || 0) + 1;
+
   await winner.save();
   await loser.save();
+
+  await markProblemUsed(battle.problemId);
+
   return {
     verdict: "WIN",
     winner: winnerId.toString(),
@@ -142,6 +149,13 @@ loser.rating = loserNewRating;
       loser: loserNewRating - loserOldRating
     }
   };
+}
+
+async function markProblemUsed(problemId) {
+  await Problem.findByIdAndUpdate(problemId, {
+    $inc: { usageCount: 1 },
+    $set: { lastUsedAt: new Date() }
+  });
 }
 
 
@@ -222,8 +236,16 @@ async function finishBattleDraw(battle) {
   player1.rating = p1NewRating;
   player2.rating = p2NewRating;
 
+  player1.draws = (player1.draws || 0) + 1;
+  player2.draws = (player2.draws || 0) + 1;
+
+  player1.totalMatches = (player1.totalMatches || 0) + 1;
+  player2.totalMatches = (player2.totalMatches || 0) + 1;
+
   await player1.save();
   await player2.save();
+
+  await markProblemUsed(battle.problemId);
 
   return {
     verdict: "DRAW",

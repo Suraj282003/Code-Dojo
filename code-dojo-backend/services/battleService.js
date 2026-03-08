@@ -8,29 +8,49 @@ const User = require("../models/users");
 // GET PROBLEM BASED ON RATING
 // ========================================
 async function getProblemForRating(rating) {
-  const problems = await Problem.aggregate([
+  const cooldownMinutes = 10;
+  const cutoff = new Date(Date.now() - cooldownMinutes * 60 * 1000);
+
+  let problems = await Problem.aggregate([
     {
       $match: {
-        minRating: { $lte: rating },
-        maxRating: { $gte: rating }
+        minRating: { $lte: rating + 100 }, // allow some flexibility
+        maxRating: { $gte: rating - 100},
+        isApproved: true,
+        $or: [
+          { lastUsedAt: { $exists: false } },
+          { lastUsedAt: { $lt: cutoff } }
+        ]
       }
     },
     {
-      $lookup: {
-        from: "testcases",
-        localField: "_id",
-        foreignField: "problemId",
-        as: "cases"
+      $addFields: {
+        usageCount: { $ifNull: ["$usageCount", 0] }
       }
     },
-    { $match: { "cases.0": { $exists: true } } },
-    { $sample: { size: 1 } }
+    {
+      $sort: { usageCount: 1 }
+    },
+    { $limit: 20 },          // Take top 20 least used
+    { $sample: { size: 1 } } // Random among them
   ]);
+
+  // Fallback if nothing found (small pool case)
+  if (!problems.length) {
+    problems = await Problem.aggregate([
+      {
+        $match: {
+          minRating: { $lte: rating },
+          maxRating: { $gte: rating },
+          isApproved: true
+        }
+      },
+      { $sample: { size: 1 } }
+    ]);
+  }
 
   return problems[0] || null;
 }
-
-
 
 // ========================================
 // CREATE RANKED BATTLE
@@ -49,6 +69,8 @@ async function createBattle(user1, user2) {
   const avgRating = Math.round(
     (player1.rating + player2.rating) / 2
   );
+
+  
 
   const problem = await getProblemForRating(avgRating);
 

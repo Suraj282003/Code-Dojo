@@ -24,7 +24,7 @@ useEffect(() => {
     const checkRefreshToken = async () => {
       try {
         const res = await axios.post(
-          "/auth/refresh-token",
+          "/auth/refresh",
           {},
           { withCredentials: true } // VERY IMPORTANT
         );

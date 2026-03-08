@@ -8,15 +8,19 @@ import Arena from "./Pages/Arena"
 import ArenaHome from "./Pages/ArenaHome"
 import WaitingRoom from "./Pages/WaitingRoom"
 import BattelResult from "./Pages/BattleResult"
+import Catagories from "./Pages/catogories"
+import Profile from "./Pages/Profile"
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/catogaries" element={<Catagories />} />
         <Route path="/challenge/:runId" element={<Survival />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/goodbye" element={<Goodbye />} />
         <Route path="/arena" element={<ArenaHome />} />
         <Route path="/arena/fight" element={<Arena />} />
