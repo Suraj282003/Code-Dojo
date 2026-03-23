@@ -10,6 +10,7 @@ import WaitingRoom from "./Pages/WaitingRoom"
 import BattelResult from "./Pages/BattleResult"
 import Catagories from "./Pages/catogories"
 import Profile from "./Pages/Profile"
+import AdminGenerate from "./Pages/AdminGenerate"
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/arena/fight" element={<Arena />} />
         <Route path="/arena/waiting" element={<WaitingRoom />} />
         <Route path="/battle-result" element={<BattelResult />} />
+        <Route path="/admin/generate" element={<AdminGenerate />} />
 
       </Routes>
     </BrowserRouter>

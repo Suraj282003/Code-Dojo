@@ -14,7 +14,7 @@ exports.getProfile = async (req, res) => {
         losses: req.user.losses || 0,
         draws: req.user.draws || 0,
         totalMatches: req.user.totalMatches || 0,
-
+        role: req.user.role || "user",
         signUpAt: req.user.signUpAt,
       },
     });

@@ -8,32 +8,97 @@ async function getAI() {
       apiKey: process.env.GEMINI_API_KEY
     });
   }
-
   return ai;
 }
 
+// =======================
+// Rating Range
+// =======================
 function getRatingRange(difficulty) {
   if (difficulty === "Easy") return { min: 800, max: 1200 };
   if (difficulty === "Medium") return { min: 1200, max: 1800 };
   if (difficulty === "Hard") return { min: 1800, max: 3000 };
 }
 
+// =======================
+// Retry System
+// =======================
+async function retryGenerate(fn, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      console.log(`Retry ${i + 1} failed:`, err.message);
+    }
+  }
+  throw new Error("AI failed after retries");
+}
+
+// =======================
+// Validate AI Output
+// =======================
+function validateProblem(data) {
+  if (!data || typeof data !== "object") return false;
+
+  const p = data.problem;
+  const t = data.testCases;
+
+  if (!p || !p.title || !p.description) return false;
+  if (!Array.isArray(t) || t.length < 4) return false;
+
+  return true;
+}
+
+// =======================
+// Normalize TestCases
+// =======================
+function normalizeTestCases(testCases) {
+  const safe = (testCases || [])
+    .filter(tc => tc && tc.input && tc.expectedOutput)
+    .slice(0, 4);
+
+  while (safe.length < 4) {
+    safe.push({
+      input: "1",
+      expectedOutput: "1",
+      isHidden: safe.length >= 2
+    });
+  }
+
+  return safe.map((tc, index) => ({
+    ...tc,
+    isHidden: index >= 2
+  }));
+}
+
+// =======================
+// MAIN FUNCTION
+// =======================
 async function generateStructuredProblem(category, difficulty) {
   const rating = getRatingRange(difficulty);
-  const aiInstance = await getAI();
 
-  const prompt = `
-Generate a competitive programming problem.
+  return retryGenerate(async () => {
+    const aiInstance = await getAI();
+
+    const prompt = `
+STRICTLY return valid JSON.
+
+Generate ONE competitive programming problem.
 
 Category: ${category}
 Difficulty: ${difficulty}
 
-Return ONLY valid JSON.
+Rules:
+- EXACTLY 4 test cases
+- FIRST 2 → isHidden: false
+- LAST 2 → isHidden: true
+- NO markdown, NO explanation
 
+Format:
 {
   "problem": {
     "title": "string",
-    "description": "clear competitive programming problem description including constraints",
+    "description": "string",
     "difficulty": "${difficulty}",
     "minRating": ${rating.min},
     "maxRating": ${rating.max},
@@ -42,128 +107,38 @@ Return ONLY valid JSON.
     "tags": ["tag1","tag2"]
   },
   "testCases": [
-    {
-      "input": "sample input",
-      "expectedOutput": "sample output",
-      "isHidden": false
-    },
-    {
-      "input": "sample input 2",
-      "expectedOutput": "sample output 2",
-      "isHidden": false
-    },
-    {
-      "input": "edge case input",
-      "expectedOutput": "edge output",
-      "isHidden": true
-    },
-    {
-      "input": "large boundary case",
-      "expectedOutput": "correct output",
-      "isHidden": true
-    },
-    {
-      "input": "random valid case",
-      "expectedOutput": "correct output",
-      "isHidden": true
-    }
+    { "input": "x", "expectedOutput": "y", "isHidden": false },
+    { "input": "x", "expectedOutput": "y", "isHidden": false },
+    { "input": "x", "expectedOutput": "y", "isHidden": true },
+    { "input": "x", "expectedOutput": "y", "isHidden": true }
   ]
 }
 `;
 
-  const response = await aiInstance.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt
-  });
+    const response = await aiInstance.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt
+    });
 
-  const text =
-    response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text =
+      response.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-  if (!text) {
-    throw new Error("Empty response from Gemini");
-  }
+    if (!text) throw new Error("Empty response");
 
-  const cleaned = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
+    const cleaned = text.replace(/```json|```/g, "").trim();
 
-  try {
     const parsed = JSON.parse(cleaned);
 
-    if (!parsed.problem || !parsed.testCases) {
-      throw new Error("Invalid AI response structure");
+    if (!validateProblem(parsed)) {
+      throw new Error("Invalid structure");
     }
 
-    if (parsed.testCases.length < 3) {
-      throw new Error("Insufficient testcases");
-    }
+    parsed.testCases = normalizeTestCases(parsed.testCases);
 
     return parsed;
-
-  } catch (err) {
-    console.error("Gemini raw response:", text);
-    throw new Error("Gemini returned invalid JSON");
-  }
-}
-
-async function generateCategoryPackFromAI(category) {
-  const aiInstance = await getAI();
-
-  const prompt = `
-Generate 7 competitive programming problems for category: ${category}
-
-Difficulty distribution:
-- 3 Easy
-- 2 Medium
-- 2 Hard
-
-Return ONLY valid JSON:
-
-{
-  "initialTime": number,
-  "problems": [
-    {
-      "problem": {...},
-      "testCases": [...]
-    }
-  ]
-}
-`;
-
-  const response = await aiInstance.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt
   });
-
-  const text =
-    response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-  if (!text) {
-    throw new Error("Empty response from Gemini");
-  }
-
-  const cleaned = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(cleaned);
-
-    if (!parsed.initialTime || !parsed.problems || parsed.problems.length !== 7) {
-      throw new Error("Invalid AI pack format");
-    }
-
-    return parsed;
-
-  } catch (err) {
-    console.error("Gemini raw response:", text);
-    throw new Error("Gemini returned invalid pack JSON");
-  }
 }
 
 module.exports = {
-  generateStructuredProblem,
-  generateCategoryPackFromAI
+  generateStructuredProblem
 };
