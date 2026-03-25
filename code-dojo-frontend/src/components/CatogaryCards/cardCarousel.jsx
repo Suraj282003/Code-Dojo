@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import api from "../../api/axios"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../Navigation/NavBar"
+import { useAuth } from "../../context/AuthContext"
 
 // 🌿 Bamboo / Nature themed stacked carousel
 const CardCarousel = () => {
   const [index, setIndex] = useState(0)
   const [categories, setCategories] = useState([])
   const navigate = useNavigate()
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -24,9 +26,9 @@ const CardCarousel = () => {
 
   const startRun = async (categoryId) => {
     const res = await api.post("/challenge/start", {
-      categoryId,
-      userId: "user123",
-    })
+        categoryId,
+        userId: user.id,
+      });
     navigate(`/challenge/${res.data.runId}`)
   }
 
