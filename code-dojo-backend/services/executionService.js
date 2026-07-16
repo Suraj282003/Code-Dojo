@@ -1,6 +1,8 @@
 const axios = require("axios")
 
-const PISTON_URL = "http://piston:2000/api/v2/execute"
+const PISTON_URL =
+  process.env.PISTON_API_URL ||
+  "https://emkc.org/api/v2/piston/execute";
 
 function mapLanguage(language) {
   switch (language) {
