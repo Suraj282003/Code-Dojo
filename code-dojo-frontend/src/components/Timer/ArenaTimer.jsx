@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export function Timer({ endTime }) {
-  const calculateTimeLeft = () => {
+  const calculateTimeLeft = useCallback(() => {
     const diff = Math.max(0, endTime - Date.now());
     return Math.floor(diff / 1000);
-  };
+  }, [endTime]);
 
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -14,7 +14,7 @@ export function Timer({ endTime }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [endTime]);
+  }, [calculateTimeLeft]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
